@@ -3,7 +3,7 @@ const userModel = require('./models/user');
 const cookieParser = require('cookie-parser');
 const postModel = require('./models/post');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const app = express();
 
