@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="w-full min-h-screen bg-zinc-900 text-white p-10">
+        <div class="flex justify-between mb-5 border-b border-white">
+            <h1 class="text-3xl pb-5 "><span class="font-light">User Profile</span>, <%= user.name  %> 👋....</h1>
+           
+            <form action="/logout" method="post">
+                <a href="/" class="text-lg align-items-right">Home</a>
+
+                <button type="submit" class="bg-transparent pt-2 text-red-400 font-bold">Logout</button>
+            </form>
+        </div>
+
+        <div class="posts mt-20">
+            <h2 class="text-lg text-zinc-400">See <%= user.username  %>'s posts.</h2>
+            <div class="post-containers w-full mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                
+               
+          
+            <%if (user.posts.length > 0) { %>
+                <% user.posts.forEach(function (post) { %>
+                    <div class="post mb-4 p-4 border-2 rounded-lg border-zinc-700 bg-zinc-800">
+                        <h4 class="text-blue-500 mb-3">@<%= user.username  %></h4>
+                        <p class="tracking-tight text-sm line-clamp-3 overflow-hidden text-ellipsis"><%= post.content%></p>
+                        <small class="inline-block font-bold mt-3"><%= post.likes.length  %> Likes</small>
+                        <div class="btns flex mt-2 gap-2">
+                            <a href="/like/post/<%= post._id  %>" class='text-red-500 text-lg'><%= (post.likes.findIndex(like => like.equals(user._id)) == -1) ? '♡' : '♥'%></a>
+                        </div>
+                    </div>
+                <% }) } else{ %>
+                    <h2 class="text-lg text-zinc-400">You don't have any post.</h2>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
