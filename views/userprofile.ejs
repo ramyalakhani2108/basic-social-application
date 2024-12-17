@@ -12,7 +12,7 @@
             <h1 class="text-3xl pb-5 "><span class="font-light">User Profile</span>, <%= user.name  %> 👋....</h1>
            
             <form action="/logout" method="post">
-                <a href="/" class="text-lg align-items-right">Home</a>
+                <a href="/" class="text-lg align-items-right mr-5">Home</a>
 
                 <button type="submit" class="bg-transparent pt-2 text-red-400 font-bold">Logout</button>
             </form>
@@ -26,12 +26,14 @@
           
             <%if (user.posts.length > 0) { %>
                 <% user.posts.forEach(function (post) { %>
-                    <div class="post mb-4 p-4 border-2 rounded-lg border-zinc-700 bg-zinc-800">
-                        <h4 class="text-blue-500 mb-3">@<%= user.username  %></h4>
-                        <p class="tracking-tight text-sm line-clamp-3 overflow-hidden text-ellipsis"><%= post.content%></p>
-                        <small class="inline-block font-bold mt-3"><%= post.likes.length  %> Likes</small>
+                    <div class="post mb-4 p-4 border-2 rounded-lg border-zinc-700 bg-zinc-800" id="post-<%= post._id %>">
+                        <h4 class="text-blue-500 mb-3">@<%= user.username %></h4>
+                        <p class="tracking-tight text-sm line-clamp-3 overflow-hidden text-ellipsis"><%= post.content %></p>
+                        <small class="inline-block font-bold mt-3" id="like-count-<%= post._id %>"><%= post.likes.length %> Likes</small>
                         <div class="btns flex mt-2 gap-2">
-                            <a href="/like/post/<%= post._id  %>" class='text-red-500 text-lg'><%= (post.likes.findIndex(like => like.equals(user._id)) == -1) ? '♡' : '♥'%></a>
+                            <a href="javascript:void(0)" id="<%= post._id  %>" class="toggle-like text-red-500 text-lg" data-post-id="<%= post._id %>" data-user-id="<%= loginuser._id %>">
+                                <%= (post.likes.findIndex(like => like.equals(loginuser._id)) === -1) ? '♡' : '♥' %>
+                            </a>
                         </div>
                     </div>
                 <% }) } else{ %>
@@ -39,6 +41,9 @@
                 <% } %>
             </div>
         </div>
+        <script src ='/socket.io/socket.io.js'></script>
+
+        <script src="/js/script.js"></script>
     </div>
 </body>
 

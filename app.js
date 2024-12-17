@@ -3,9 +3,16 @@ const userModel = require('./models/user');
 const cookieParser = require('cookie-parser');
 const postModel = require('./models/post');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const path = require('path');
+const upload = require('./config/multerconfig');
 const app = express();
+const http = require('http')
+const server = http.createServer(app);
+const {Server} = require('socket.io');
+const io = new Server(server);
+
+
 
 app.set('view engine', 'ejs');
 app.use(express.json());
@@ -13,18 +20,103 @@ app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(cookieParser());
 
+//this is how the crypto works 
+// crypto.randomBytes(10, (err, buf) => {
+//     console.log(buf.toString('hex'));
+//     })
 
+
+io.on('connection', (socket) => {
+    console.log('A user connected');
+  
+    socket.on('toggle-like', async (postId, userId) => {    
+        try {
+            let post = await postModel.findById(postId).populate('likes');
+            const userIndex = post.likes.findIndex(like => like._id.toString() === userId);
+
+            if (userIndex === -1) {
+               
+                post.likes.push(userId);
+            } else {
+              
+                post.likes.splice(userIndex, 1);
+            }
+
+         
+            await post.save();
+
+            io.emit('update-likes', postId,  post.likes.length, post.likes);
+        } catch (error) {
+            console.error('Error handling like/dislike:', error);
+        }
+    });
+
+    socket.on('new-post', async (data) => {
+        const { content, userId } = data;
+        console.log(content, userId);
+        let user = await userModel.findOne({_id: userId});
+
+        //saving post with user's id
+        let post = await postModel.create({
+            user: user._id,
+            content
+        });
+    
+
+        
+
+        //saving post id to user
+        user.posts.push(post._id);
+        await user.save();
+        io.emit('post-created', post,user);
+    });
+
+    socket.on('delete-post', async (postId, userId) => {
+        const post = await postModel.findById(postId);
+        const user = await userModel.findById(userId);
+        if(post){
+            await postModel.findOneAndDelete({_id: post._id});
+            await user.posts.splice(post._id, 1);
+            await user.save();
+
+            io.emit('deleted-post', postId);
+
+        }
+    })
+
+  
+    socket.on('disconnect', () => {
+      console.log('A user disconnected');
+    });
+  });
 
 app.get('/register', (req, res) => {
     res.render('register')
 });
 
+
+app.post('/profile/upload',isLoggedIn, upload.single('profile_img'), async (req, res) => {
+    let user = await userModel.findOneAndUpdate({_id:req.user.userid}, {profile: req.file.filename},{new:true});
+    res.redirect('/profile');
+})
+
+
+app.get('/delete/post/:postid',isLoggedIn, async (req,res)=> {
+    let user = await userModel.findOne({_id: req.user.userid});
+    let post = await postModel.findOneAndDelete({_id: req.params.postid});
+
+    user.posts.splice(user.posts.indexOf(post._id), 1);
+    await user.save(); //saving the changes
+    res.redirect(req.get('Referer')); //redirecting back to profile page
+});
 app.get('/', isLoggedIn, async (req, res) => {
+
+    let loginuser = await userModel.findOne({_id: req.user.userid});
     let user = await userModel.findOne({_id: req.user.userid});
     let posts = await postModel.find().populate('user').populate('likes');
 
      
-    res.render('index', {user,posts})
+    res.render('index', {user,posts, loginuser})
 })
 //registering the users
 app.post('/register', async (req, res) => {
@@ -65,8 +157,10 @@ app.get('/login', (req, res) => {
 
 //protected route
 app.get('/profile',isLoggedIn, async (req,res)=>{
+
+    let loginuser = await userModel.findOne({_id: req.user.userid});
     let user = await   userModel.findOne({_id: req.user.userid}).populate('posts');
-    res.render('profile', {user});
+    res.render('profile', {user, loginuser});
 })
 
 app.get('/profile/:id', isLoggedIn, async (req, res)=>{
@@ -119,7 +213,6 @@ app.post('/login', async(req, res) => {
 })
 
 app.get('/like/post/:postid', isLoggedIn,async (req, res) => {
-
     let post = await  postModel.findOne({_id: req.params.postid});
     var index = post.likes.indexOf(req.user.userid);
     //check if the user is already liked the post or not 
@@ -176,7 +269,4 @@ function isLoggedIn(req,res,next){
 
 
 
-const PORT = process.env.PORT || 3000; // Vercel automatically sets the PORT env variable
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(3002);

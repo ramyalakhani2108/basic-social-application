@@ -14,7 +14,7 @@
                 <button type="submit" class="bg-transparent pt-2 text-red-400 font-bold">Logout</button>
             </form>
         </div>
-        
+       
         <h5 class="mb-5">Here you can create your posts.</h5>
 
         <form action="/post" method="post">
@@ -22,18 +22,20 @@
             <input type="submit" class="px-3 w-40 text-sm py-2 bg-blue-900 rounded-lg block" value="Save">
         </form>
 
-            <div class="posts mt-20">
+        <div class="posts mt-20">
                 <h2 class="text-lg text-zinc-400">Your posts.</h2>
                 <div class="post-containers w-full mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
                     
                 <%if (posts.length > 0) { %>
                     <% posts.forEach(function (post) { %>
                         <div class="post mb-4 p-4 border-2 rounded-lg border-zinc-700 bg-zinc-800">
-                            <h4 class="text-blue-500 mb-3">@<%= post.user.username  %></h4>
+                            <a href="/profile/<%= post.user._id  %>" class="inline-block text-blue-500 mb-3">@<%= post.user.username  %></a>
                             <p class="tracking-tight text-sm line-clamp-3 overflow-hidden text-ellipsis"><%= post.content%></p>
-                            <small class="inline-block font-bold mt-3"><%= post.likes.length  %> Likes</small>
+                            <small class="inline-block font-bold mt-3" id="like-count-<%= post._id %>"><%= post.likes.length %> Likes</small>
                             <div class="btns flex mt-2 gap-2">
-                                <a href="/like/post/<%= post._id  %>" class='text-red-500 text-lg'><%= (post.likes.findIndex(like => like.equals(user._id)) == -1) ? '♡' : '♥'%></a>
+                                <a href="javascript:void(0)" id="<%= post._id  %>" class="toggle-like text-red-500 text-lg" data-post-id="<%= post._id %>" data-user-id="<%= loginuser._id %>">
+                                    <%= (post.likes.findIndex(like => like.equals(loginuser._id)) === -1) ? '♡' : '♥' %>
+                                </a>
                                 <% if(user.email === post.user.email) {%>
                                     <a href="/edit/post/<%= post._id  %>" class="text-zinc-600">Edit</a>
                                 <% } %>
@@ -50,7 +52,10 @@
 
 
                 </div>
-            </div>
+        </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/js/script.js"></script>
+        
 </body>
 
 </html>
